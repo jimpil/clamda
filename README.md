@@ -1,5 +1,10 @@
 # clamda
 
+<p align="center">
+  <img src="https://accelerator-origin.kkomando.com/wp-content/uploads/2018/02/file-conversion.jpg"/>
+</p>
+
+
 A little Clojure library to help you reduce/transduce over Java Streams (including parallel ones).
 Helpers for conveniently creating Lamdas from plain Clojure functions were inevitable.
 
