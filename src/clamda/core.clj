@@ -44,7 +44,7 @@
      (reduce [_ f init]
        (let [[done? done!] (when abortive?
                              (let [flag (AtomicBoolean. false)]
-                               [(comp true? #(.get flag))
+                               [#(.get flag)
                                 #(.set flag true)]))
              done? (or done? (constantly false))
              done! (or done! (constantly nil))
