@@ -9,6 +9,7 @@ A little Clojure library to help you reduce/transduce over Java Streams (includi
 Helpers for conveniently creating Lamdas from plain Clojure functions were inevitable.
 
 ## Where
+
 TBC
 
 ## Why

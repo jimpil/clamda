@@ -5,7 +5,8 @@
            [clojure.lang IReduceInit]
            (java.io BufferedReader)
            (java.util Iterator)
-           (clamda.redux SeqSpliterator)))
+           (clamda.redux SeqSpliterator)
+           (java.util.concurrent.atomic AtomicBoolean)))
 
 (defn- accu*
   "A little helper for creating accumulators."
@@ -42,9 +43,9 @@
    (reify IReduceInit
      (reduce [_ f init]
        (let [[done? done!] (when abortive?
-                             (let [dp (promise)]
-                               [(partial realized? dp)
-                                (partial deliver dp true)]))
+                             (let [flag (AtomicBoolean. false)]
+                               [(comp true? #(.get flag))
+                                #(.set flag true)]))
              done? (or done? (constantly false))
              done! (or done! (constantly nil))
              bi-function (jl/jlamda :bi-function (partial accu* f done!)) ;; accumulator
