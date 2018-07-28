@@ -4,7 +4,7 @@
   (:import [java.util.stream Stream StreamSupport]
            [clojure.lang IReduceInit]
            (java.io BufferedReader)
-           (java.util Iterator)
+           (java.util Iterator Spliterator)
            (clamda.redux SeqSpliterator)
            (java.util.concurrent.atomic AtomicBoolean)))
 
@@ -137,13 +137,21 @@
     ;; because they can be split cheaply
    (seq-stream s lazy-split (vector? s)))
   (^Stream [s lazy-split parallel?]
-   (let [rest-fn (cond ;; 2-args so we can call it without caring
-                   (vector? s) vrest
-                   (set? s)    disj
-                   (map? s)    mrest
+   (let [[is-counted? is-sorted? is-map? is-set? is-vector?]
+         ((juxt counted? sorted? map? set? vector?) s)
+         characteristics (cond->> Spliterator/IMMUTABLE
+                                  is-counted? (bit-and Spliterator/SIZED
+                                                       Spliterator/SUBSIZED)
+                                  is-sorted?  (bit-and Spliterator/SORTED)
+                                  (or is-map?
+                                      is-set?) (bit-and Spliterator/DISTINCT))
+         rest-fn (cond ;; 2-args so we can call it without caring
+                   is-vector?  vrest
+                   is-set?     disj
+                   is-map?     mrest
                    :else       rrest)]
      (StreamSupport/stream
-       (SeqSpliterator. s rest-fn (or lazy-split 1024))
+       (SeqSpliterator. s characteristics rest-fn (or lazy-split 1024))
        parallel?))))
 
 (defn jlamda

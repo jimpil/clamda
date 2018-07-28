@@ -27,22 +27,18 @@
   "Wraps a Stream such that it can (optionally) terminate early
   (i.e. when <done?>, a fn of no args, returns true)."
   ^Stream [^Stream stream done?]
-  (let [parallel? (.isParallel stream)]
-    (-> stream
-        .spliterator
-        (abortive-spliterator done?)
-        (StreamSupport/stream parallel?))))
+  (-> stream
+      .spliterator
+      (abortive-spliterator done?)
+      (StreamSupport/stream (.isParallel stream))))
+
 
 (deftype SeqSpliterator
-  [^:unsynchronized-mutable s rest-fn lazy-seq-split]
+  [^:unsynchronized-mutable s characteristics rest-fn lazy-seq-split]
 
   Spliterator
   (characteristics [_]
-    (cond->> Spliterator/IMMUTABLE
-             (counted? s)  (bit-and Spliterator/SIZED)
-             (sorted? s)   (bit-and Spliterator/SORTED)
-             (or (map? s)
-                 (set? s)) (bit-and Spliterator/DISTINCT)))
+    characteristics)
   (estimateSize [_]
     (if (counted? s)
       (count s)
@@ -57,25 +53,41 @@
       (cond
         (vector? current)
         (let [n (count current)
-              middle (long (/ n 2))
+              middle (/ n 2)
               left  (subvec current 0 middle)
               right (subvec current middle n)] ;; fast split
-          (set! s right)
-          (SeqSpliterator. left rest-fn nil))
+          (when (and (seq left)
+                     (seq right))
+            (set! s right)
+            (SeqSpliterator. left characteristics rest-fn nil)))
 
-        (or (map? current)
-            (set? current))
+        (map? current)
         (let [n (count current)
-              middle (long (/ n 2))
-              [left right] (split-at middle current)] ;; slow split
-          (set! s (into (empty current) right))
-          (SeqSpliterator. (into (empty current) left) rest-fn nil))
+              middle (/ n 2)
+              ks (keys current)
+              left-ks (take middle ks)
+              right (apply dissoc current left-ks)]
+          (when (and (seq left-ks)
+                     (seq right))
+            (set! s right)
+            (SeqSpliterator. (select-keys current left-ks) characteristics rest-fn nil)))
+
+        (set? current) ;; this is the slowest path :(
+        (let [n (count current)
+              middle (/ n 2)
+              left-ks (take middle current)
+              right (apply disj current left-ks)]
+          (when (and (seq left-ks)
+                     (seq right))
+            (set! s right)
+            (SeqSpliterator. (set left-ks) characteristics rest-fn nil)))
 
         :else
         (let [[left right] (split-at lazy-seq-split current)] ;; slow split
-          (when (seq right)
+          (when (and (seq left)
+                     (seq right))
             (set! s right)
-            (SeqSpliterator. left rest-fn lazy-seq-split)))
+            (SeqSpliterator. left characteristics rest-fn lazy-seq-split)))
         )
       )
     )
@@ -92,6 +104,6 @@
   (dissoc m (key me)))
 
 (defn rrest
-  "rest-fn for anything else"
+  "rest-fn for seqs"
   [s _]
   (rest s))
