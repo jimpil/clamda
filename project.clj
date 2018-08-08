@@ -1,4 +1,4 @@
-(defproject clamda "0.1.1-SNAPSHOT"
+(defproject clamda "0.1.3-SNAPSHOT"
   :description "FIXME: write description"
   :url "https://github.com/jimpil/clamda"
   :license {:name "Eclipse Public License"

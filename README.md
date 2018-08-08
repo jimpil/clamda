@@ -127,12 +127,12 @@ An alternative to `clojure.core/iterator-seq`. Returns something reducible, rath
 #### stream-seq
 Diverging from the overall spirit of this library (which is reducible-streams),
 `stream-seq` lets you turn a java Stream into a clojure Seq, via its plain old
-sequential Iterator (see `iterator-seq`). I won't say "don't use it", because
-there are cases where you may need to. That said, I feel obliged to say that
-`reducible-stream` should almost always be your first thought.
-It is a very simple function which essentially wraps `iterator-seq`, and is
-provided for completeness, but make sure you understand the trade-offs 
-before using it.
+sequential Iterator (see `iterator-seq`). It is a very simple function which
+ essentially wraps `iterator-seq`, and is provided for completeness,
+ but make sure you understand the trade-offs before using it. I won't say
+ "don't use it", because there are cases where you may need to.
+ That said, I feel obliged to say that `stream-reducible` should almost always
+ be your first choice.
 
 
 
