@@ -10,7 +10,7 @@ Helpers for conveniently creating Lamdas from plain Clojure functions were inevi
 
 ## Where
 
-TBC
+[![Clojars Project](https://img.shields.io/clojars/v/clamda.svg)](https://clojars.org/clamda)
 
 ## Why
 
@@ -26,9 +26,14 @@ All that said, the value of this library is most-likely NOT password-cracking, b
 
 ### clamda.core
 
+#### stream-reducible
+In some respects, I feel this is the centerpiece when it comes to Java interop.
+Everything else builds on top of this, and it does exactly what it says on the tin.
+It turns a java Stream into something reducible.
+
+
 #### stream-into
 A 'collecting' transducing context (along the lines of `clojure.core/into`), for Streams.
-In some respects, I feel this is the centerpiece when it comes to Java interop.
 No intermediate collections are involved, and in the case of a sequential Stream,
 it can/will be done fully mutably (via transients). The same cannot be said for a parallel Stream, which
 can do the 'outer' combining using transients (via `into`), but the 'inner' reductions
