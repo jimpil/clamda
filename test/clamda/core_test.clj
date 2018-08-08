@@ -6,9 +6,10 @@
 
 (defn hard-worker
   [f ms]
-  (fn [& args]
-    (Thread/sleep ms)
-    (apply f args)))
+  (let [ms (inc ms)]
+    (fn [& args]
+      (Thread/sleep (rand-int ms))
+      (apply f args))))
 
 (deftest stream-into-tests
 
@@ -74,15 +75,13 @@
          test-seq-stream (seq-stream test-seq 10000 true)
          pred-lamda (jlamda :predicate f1)
          fn-lamda (jlamda :function f2)
-         expected  (time
-                     (->> test-seq
-                          (filter f1)
-                          (mapv f2)))
-         ^ArrayList actual (time
-                             (-> test-seq-stream
-                                 (.filter pred-lamda)
-                                 (.map    fn-lamda)
-                                 (.collect (Collectors/toList))))]
+         expected  (->> test-seq
+                        (filter f1)
+                        (mapv f2))
+         ^ArrayList actual (-> test-seq-stream
+                               (.filter pred-lamda)
+                               (.map    fn-lamda)
+                               (.collect (Collectors/toList)))]
      (is (true?
            (Arrays/equals (into-array expected)
                           (.toArray actual)))))))
@@ -95,19 +94,15 @@
         map-fns (map #(comp % key) non-map-fns)]
 
     (testing "a plain lazy-seq"
-      ;; "Elapsed time: 77.792888 msecs"
       (do-seq-stream-test r non-map-fns))
 
     (testing "a vector"
-      ;; "Elapsed time: 59.028358 msecs"
       (do-seq-stream-test (into [] r) non-map-fns))
 
     (testing "a set"
-      ;; "Elapsed time: 1425.237297 msecs" - 83937.941167 when sequentially!
       (do-seq-stream-test (into #{} r) non-map-fns))
 
     (testing "a map"
-      ;; "Elapsed time: 1437.287605 msecs" - 26028.905776 when sequentially!
       (do-seq-stream-test (zipmap r (repeat :a)) map-fns))
 
     )

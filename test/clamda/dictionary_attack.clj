@@ -3,7 +3,17 @@
             [clojure.java.io :as io]
             [clamda.core :refer :all])
   (:import (java.nio.file Paths Files)
-           (java.util.stream Stream)))
+           (java.util.stream Stream)
+           (java.io BufferedWriter)))
+
+(defn spit-lines
+  "Like `clojure.core/spit`, but for several lines
+   without having to construct a giant String."
+  [f lines & options]
+  (with-open [^BufferedWriter wrt (apply io/writer f options)]
+    (run! #(.write wrt ^String %)
+          (interpose (System/getProperty "line.separator")
+                     lines))))
 
 
 (defn- random-dictionary!
@@ -13,19 +23,16 @@
   ([secret fpath]
    (random-dictionary! 100000 secret fpath))
   ([n your-secret fpath]
-   (let [eng-chars (map char (range (int \a)
-                                    (inc (int \z))))]
-     (->> (repeatedly n
-                      (fn []
-                        (->> eng-chars
-                             shuffle
-                             (take (+ 5 (rand-int 6))) ;; 6-11 chars long
-                             (apply str))))
+   (let [eng-chars (mapv char (range (int \a)
+                                     (inc (int \z))))
+         random-password #(apply str
+                                 (repeatedly (+ 5 (rand-int 6)) ;; 6-11 chars long
+                                             (partial rand-nth eng-chars)))
+         ]
+     (->> (repeatedly n random-password)
           (cons your-secret)
           shuffle
-          (interpose \newline)
-          (apply str)
-          (spit fpath)))))
+          (spit-lines fpath)))))
 
 
 (defn- do-line-stream-test
@@ -36,7 +43,7 @@
                                     true .toURI
                                     true Paths/get
                                     true Files/lines
-                                    parallel? .parallel)] ;; no point doing that on a JDK prior to 9
+                                    parallel? .parallel)] ;; no point doing that on any JDK prior to 9
     (time
       (if java?
         (let [found (-> line-stream
@@ -49,7 +56,11 @@
           (is (= "mysecret" found)))))))
 
 
-(deftest dictionary-attacks ;; 4 ways of performing a dictionary attack without OOM
+;; uncomment & run the following test after having generated `resources/ddict.txt`
+;; feel free to adjust the size of the dictionary, by adjusting the number of entries in it.
+;; see `random-dictionary!`
+
+#_(deftest dictionary-attacks ;; 4 ways of performing a dictionary attack without OOM
 
   (System/gc)
 

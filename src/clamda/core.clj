@@ -123,7 +123,7 @@
             state))))))
 
 (defn seq-stream
-  "Returns a Stream around a Clojure seq.
+  "Returns a java Stream wrapping a clojure Seq.
    The usefulness of this constructor-fn is minimal (to none) for Clojure users.
    If you're writing Java, it is conceivable that you may want/have to consume a Clojure
    data-structure, and in such cases it is only natural to want to write your code
@@ -153,6 +153,14 @@
      (StreamSupport/stream
        (SeqSpliterator. s characteristics rest-fn (or lazy-split 1024))
        parallel?))))
+
+(defn stream-seq
+  "Returns a Seq wrapping a java Stream (via its Iterator)."
+  [^Stream s]
+  ;; It would be somewhat unorthodox to use this,
+  ;; given that the whole point of this library is
+  ;; to help you avoid doing exactly that (going via Seq)
+  (-> s .iterator iterator-seq))
 
 (defn jlamda
   "Convenience wrapper-fn around `clamda.jlamda/jlamda`.
